@@ -5,14 +5,9 @@ import { AppComponent } from './app.component';
 import { SasComponent } from './sas/sas.component';
 
 @NgModule({
-  declarations: [
-    AppComponent,
-    SasComponent
-  ],
-  imports: [
-    BrowserModule
-  ],
+  declarations: [AppComponent, SasComponent],
+  imports: [BrowserModule],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}
