@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { AzureBlobStorageService } from './../azure-blob-storage.service';
+import { BlockBlobClient } from '@azure/storage-blob';
 
 @Component({
   selector: 'app-sas',
@@ -8,19 +9,23 @@ import { AzureBlobStorageService } from './../azure-blob-storage.service';
 })
 export class SasComponent {
   res = {
-    'peter-546250436157227224.jpg':
-      'https://stgisappsdevwedigihub001.blob.core.windows.net/dh-temp-file-store/peter-546250436157227224.jpg?sv=2023-08-03&st=2024-02-16T08%3A44%3A12Z&se=2024-02-16T08%3A49%3A12Z&sr=b&sp=rw&sig=PbdvNu0i%2FLv3W5RGd%2Ba4KvpRZK8TZIdYK%2BgnoDIdUd4%3D',
+    'Sunflower-546263421294461130.jpg':
+      'https://stgisappsdevwedigihub001.blob.core.windows.net/dh-temp-file-store/Sunflower-546263421294461130.jpg?sv=2023-08-03&st=2024-02-16T09%3A35%3A48Z&se=2024-02-16T09%3A40%3A48Z&sr=b&sp=rw&sig=ZT%2FGh22irvRI1NWDWCFnwEPrUwzCsRcZFXtCz2HCIMU%3D',
   };
 
   constructor(private blobService: AzureBlobStorageService) {}
 
   public imageSelected(file: File) {
-    this.blobService.uploadImage(
-      this.parseSasResponse(),
-      file,
-      file.name,
-      () => {}
-    );
+    var sas = Object.values(this.res)[0];
+    var cloudBlockBlob = new BlockBlobClient(sas);
+    cloudBlockBlob
+      .uploadData(file, {
+        blobHTTPHeaders: {
+          blobContentType: file.type,
+        },
+      })
+      .then((e) => console.log(e))
+      .catch((e) => console.log(e));
   }
 
   parseSasResponse() {
