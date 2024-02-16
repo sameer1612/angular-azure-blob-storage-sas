@@ -1,25 +1,42 @@
-import { Injectable } from '@angular/core';
-import { inject } from '@angular/core/testing';
+import { ErrorHandler, Injectable } from '@angular/core';
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AzureBlobStorageService {
+  // Enter your storage account name
   picturesAccount = 'stgisappsdevwedigihub001';
+
+  // container name
   picturesContainer = 'dh-temp-file-store';
 
-  constructor() {}
-
+  // +IMAGES
   public uploadImage(
-    sasResponse: Record<string, string>,
+    sas: string,
     content: Blob,
+    name: string,
     handler: () => void
   ) {
-    const name = Object.keys(sasResponse)[0];
-    const url = sasResponse[name];
-    this.uploadBlob(content, name, this.containerClient(url), handler);
+    this.uploadBlob(content, name, this.containerClient(sas), handler);
   }
+
+  public listImages(sas: string): Promise<string[]> {
+    return this.listBlobs(this.containerClient(sas));
+  }
+
+  public downloadImage(
+    sas: string,
+    name: string,
+    handler: (blob: Blob) => void
+  ) {
+    this.downloadBlob(name, this.containerClient(sas), handler);
+  }
+
+  public deleteImage(sas: string, name: string, handler: () => void) {
+    this.deleteBlob(name, this.containerClient(sas), handler);
+  }
+  // -IMAGES
 
   private uploadBlob(
     content: Blob,
@@ -35,9 +52,43 @@ export class AzureBlobStorageService {
       .then(() => handler());
   }
 
-  private containerClient(url: string): ContainerClient {
-    return new BlobServiceClient(url).getContainerClient(
-      this.picturesContainer
-    );
+  private async listBlobs(client: ContainerClient): Promise<string[]> {
+    let result: string[] = [];
+
+    let blobs = client.listBlobsFlat();
+    for await (const blob of blobs) {
+      result.push(blob.name);
+    }
+
+    return result;
+  }
+
+  private downloadBlob(
+    name: string,
+    client: ContainerClient,
+    handler: (blob: Blob) => void
+  ) {
+    const blobClient = client.getBlobClient(name);
+    blobClient.download().then((resp) => {
+      resp.blobBody.then((blob) => {
+        handler(blob);
+      });
+    });
+  }
+
+  private deleteBlob(
+    name: string,
+    client: ContainerClient,
+    handler: () => void
+  ) {
+    client.deleteBlob(name).then(() => {
+      handler();
+    });
+  }
+
+  private containerClient(sas: string): ContainerClient {
+    return new BlobServiceClient(
+      `https://${this.picturesAccount}.blob.core.windows.net?${sas}`
+    ).getContainerClient(this.picturesContainer);
   }
 }
